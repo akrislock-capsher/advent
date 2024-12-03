@@ -1,3 +1,6 @@
+" Let's learn some vimscript. Loosely following this online book
+" https://learnvimscriptthehardway.stevelosh.com/
+
 " You can symlink this file to ~/.vimrc in windows Git Bash:
 " - Make a ~/.bash_profile file and put in "export MSYS=winsymlinks:nativestrict"
 " - Run git bash in administrator mode
