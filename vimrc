@@ -140,6 +140,62 @@ augroup END
 :endfunction
 " }}}
 
+" ==Day 2 {{{
+:function HowManyReportsAreSafe()
+"  init total
+:  let w:total_safe = 0
+
+"  put a blank line at the end of file to stop loop
+:  execute "normal! Go\<esc>gg"
+
+"  yank the first line
+:  execute "normal! 0y$"
+
+"  while the line is not empty, loop
+:  while @" != ""
+:    let w:total_safe += IsReportSafe(@")
+:    execute "normal! j0y$"
+:  endwhile
+
+"  cleanup that blank line, show result
+:  echom w:total_safe
+:  execute "normal! Gddgg"
+:endfunction
+
+:function IsReportSafe(report)
+:  let l:report = split(a:report, " ")
+:  let l:last_level = 0
+:  let l:last_diff = 0
+
+:  for l:level in l:report
+"    only need to compare if I have two adjacent
+:    if l:last_level > 0
+"      compare this level to the last
+:      let l:diff = l:level - l:last_level
+
+"      if the diff is 0 or too big, die
+:      if l:diff == 0 || l:diff < -3 || l:diff > 3
+:        return 0
+:      endif
+
+"      if the diff is a different direction than the last, die
+:      if l:last_diff * l:diff < 0
+:        return 0
+:      endif
+
+"      remember last diff
+:      let l:last_diff = l:diff
+:    endif
+
+"    remember last level
+:    let l:last_level = l:level
+:  endfor
+
+"  if we survive that loop, report is safe
+:  return 1
+:endfunction
+" }}}
+
 " }}}
 
 
