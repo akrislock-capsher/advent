@@ -61,8 +61,10 @@ augroup END
 "  window scoped variables
 :  let w:group_one = []
 :  let w:group_two = []
+
 "  put a blank line at the end of file to stop loop and grab first line
 :  execute "normal! Go\<esc>gg0y$"
+
 "  while the line is not empty, loop
 :  while @" != ""
 :    let l:split_line = split(@", "   ")
@@ -72,11 +74,13 @@ augroup END
 "    grab the next line
 :    execute "normal! j0y$"
 :  endwhile
+
 "  might as well sort em right now
 :  let w:group_one = sort(w:group_one, 'n')
 :  let w:group_two = sort(w:group_two, 'n')
 :  echom w:group_one
 :  echom w:group_two
+
 "  cleanup that blank line
 :  execute "normal! Gddgg"
 :endfunction
@@ -86,19 +90,53 @@ augroup END
 :  let w:total_diff = 0
 :  let l:index = 0
 :  while index < len(w:group_one)
+
 "    get from sorted data
 :    let l:one = w:group_one[index]
 :    let l:two = w:group_two[index]
+
 "    calculate diff
 :    if l:two > l:one
 :      let w:total_diff += l:two - l:one
 :    else
 :      let w:total_diff += l:one - l:two
 :    endif
+
 "    loop increment
 :    let l:index += 1
 :  endwhile
+
+"  result
 :  echom w:total_diff
+:endfunction
+
+:function FindSimilarities()
+"  running total, and a dict so I don't have to repeat myself
+:  let w:total_sim = 0
+:  let w:sim_dict = {}
+
+"  loop over first list, find similarity in second list
+:  for l:one in w:group_one
+
+"    need to determine similarity if we don't have it yet
+:    if !has_key(w:sim_dict, l:one)
+
+"      loop over second list, find similarity with first item
+:      let l:sim_count = 0
+:      for l:two in w:group_two
+:        if l:one == l:two
+:          let l:sim_count += 1
+:        endif
+:      endfor
+:      let w:sim_dict[l:one] = l:one * l:sim_count
+:    endif
+
+"    now we have the similarity, add it to our total
+:    let w:total_sim += w:sim_dict[l:one]
+:  endfor
+
+"  result
+:  echom w:total_sim
 :endfunction
 " }}}
 
@@ -108,3 +146,6 @@ augroup END
 " Memorable quotes
 "
 " Chapter 21 Exercises: Drink a beer to console yourself about Vim's coercion of strings to integers.
+"
+" A quote from a different vim book:
+" In the hands of a master, vim can shred text at the speed of thought.
