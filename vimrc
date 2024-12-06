@@ -141,34 +141,66 @@ augroup END
 " }}}
 
 " ==Day 2 {{{
+" lemme try some simpler functions for any kind of movements...
+:function AddBlank()
+"  put a blank line at the end of file to stop loops
+:  execute "normal! Go\<esc>gg"
+:endfunction
+
+:function PrepToReadLevels()
+"  Add several blanks to the end of this line to assist movement
+:  execute "normal! A   \<esc>0"
+:endfunction
+
+:function DeleteThisNumber()
+"  Remove the number starting at the cursor position
+"  NOTE: The cursor will remain in that position
+:  execute "normal! df "
+:endfunction
+
+:function GetThisNumber()
+"  Find the number starting at the cursor position
+"  NOTE: The cursor will go back to where it was after the yank
+:  execute "normal! yf "
+"  Coerce what's in the yank register into a number
+:  return 0 + @"
+:endfunction
+
+:function NextLine()
+:  execute "normal! j0"
+:endfunction
+
 :function HowManyReportsAreSafe()
 "  init total
 :  let w:total_safe = 0
 
 "  put a blank line at the end of file to stop loop
-:  execute "normal! Go\<esc>gg"
+:  call AddBlank()
 
-"  yank the first line
-:  execute "normal! 0y$"
+"  try getting a number
+:  call PrepToReadLevels()
+:  let l:num = GetThisNumber()
 
-"  while the line is not empty, loop
-:  while @" != ""
-:    let w:total_safe += IsReportSafe(@")
-:    execute "normal! j0y$"
+"  while we have a number at the start of a line, loop
+:  while l:num != 0
+"    see if our report line is Safe, pass in first num for efficiency
+:    let w:total_safe += IsReportSafe(l:num)
+:    call NextLine()
+:    call PrepToReadLevels()
+:    let l:num = GetThisNumber()
 :  endwhile
 
-"  cleanup that blank line, show result
+"  show result
 :  echom w:total_safe
-:  execute "normal! Gddgg"
 :endfunction
 
-:function IsReportSafe(report)
-:  let l:report = split(a:report, " ")
+:function IsReportSafe(num)
 :  let l:last_level = 0
 :  let l:last_diff = 0
+:  let l:level = a:num
 
-:  for l:level in l:report
-"    only need to compare if I have two adjacent
+:  while l:level != 0
+"    only need to compare if I have two adjacent levels
 :    if l:last_level > 0
 "      compare this level to the last
 :      let l:diff = l:level - l:last_level
@@ -189,11 +221,16 @@ augroup END
 
 "    remember last level
 :    let l:last_level = l:level
-:  endfor
+
+"    move to and get next level
+:    execute "normal! f l"
+:    let l:level = GetThisNumber()
+:  endwhile
 
 "  if we survive that loop, report is safe
 :  return 1
 :endfunction
+
 " }}}
 
 " }}}
