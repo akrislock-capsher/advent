@@ -171,29 +171,21 @@ augroup END
 :  execute "normal! \"aP"
 "  ..3.. Use find to get back to "o"riginal position
 :  execute "normal! 0/\<C-r>o\<cr>"
-" DEBUG:
-":  execute "normal yy,lGp,h"
 :endfunction
 
 :function DeleteThisNumber()
 "  Remove the number starting at the cursor position
 :  execute "normal! df "
-" DEBUG:
-":  execute "normal yy,lGp,h"
 :endfunction
 
 :function DeletePrevPrevNumber()
 "  Remove the previous number starting at the cursor position
 :  execute "normal! bbdf "
-" DEBUG:
-":  execute "normal yy,lGp,h"
 :endfunction
 
 :function DeletePrevNumber()
 "  Remove the previous number starting at the cursor position
 :  execute "normal! bdf "
-" DEBUG:
-":  execute "normal yy,lGp,h"
 :endfunction
 
 :function GetThisNumber()
