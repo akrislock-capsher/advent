@@ -25,6 +25,11 @@ set expandtab
 " Other basic options {{{
 set hlsearch
 set nowrap
+" These four lines set a block cursor in normal, visual modes
+let &t_ti.="\e[1 q"
+let &t_SI.="\e[5 q"
+let &t_EI.="\e[1 q"
+let &t_te.="\e[0 q"
 " }}}
 
 " Mappings {{{
@@ -142,20 +147,53 @@ augroup END
 
 " ==Day 2 {{{
 " lemme try some simpler functions for any kind of movements...
-:function AddBlank()
-"  put a blank line at the end of file to stop loops
-:  execute "normal! Go\<esc>gg"
-:endfunction
-
 :function PrepToReadLevels()
 "  Add several blanks to the end of this line to assist movement
 :  execute "normal! A   \<esc>0"
 :endfunction
 
+:function TakeLineSnapshot()
+"  NOTE: Need to be super careful with any movements
+"  ..... Take more control by recording the current position and current line
+"  ..1.. Yank from where we are to the end of the line in register o
+:  execute "normal! \"oy$"
+"  ..2.. Yank the entire line in register a
+:  execute "normal! 0\"ayy"
+"  ..3.. Search to get back to "o"riginal position
+:  execute "normal! 0/\<C-r>o\<cr>"
+:endfunction
+
+:function RestoreLineSnapshot()
+"  Restore our snapshot of the current line
+"  ..1.. Delete the whole line
+:  execute "normal! dd"
+"  ..2.. Paste our entire line from register a
+:  execute "normal! \"aP"
+"  ..3.. Use find to get back to "o"riginal position
+:  execute "normal! 0/\<C-r>o\<cr>"
+" DEBUG:
+":  execute "normal yy,lGp,h"
+:endfunction
+
 :function DeleteThisNumber()
 "  Remove the number starting at the cursor position
-"  NOTE: The cursor will remain in that position
 :  execute "normal! df "
+" DEBUG:
+":  execute "normal yy,lGp,h"
+:endfunction
+
+:function DeletePrevPrevNumber()
+"  Remove the previous number starting at the cursor position
+:  execute "normal! bbdf "
+" DEBUG:
+":  execute "normal yy,lGp,h"
+:endfunction
+
+:function DeletePrevNumber()
+"  Remove the previous number starting at the cursor position
+:  execute "normal! bdf "
+" DEBUG:
+":  execute "normal yy,lGp,h"
 :endfunction
 
 :function GetThisNumber()
@@ -167,37 +205,40 @@ augroup END
 :endfunction
 
 :function NextLine()
-:  execute "normal! j0"
+"  Just delete the current line
+:  execute "normal! dd"
 :endfunction
 
-:function HowManyReportsAreSafe()
-"  init total
+:function HowManyReportsAreSafe(num_lines)
+"  init totals
 :  let w:total_safe = 0
-
-"  put a blank line at the end of file to stop loop
-:  call AddBlank()
+:  let l:total_lines = 0
 
 "  try getting a number
 :  call PrepToReadLevels()
 :  let l:num = GetThisNumber()
 
 "  while we have a number at the start of a line, loop
-:  while l:num != 0
+:  while l:num != 0 && l:total_lines < a:num_lines
 "    see if our report line is Safe, pass in first num for efficiency
 :    let w:total_safe += IsReportSafe(l:num)
+:    let l:total_lines += 1
 :    call NextLine()
 :    call PrepToReadLevels()
 :    let l:num = GetThisNumber()
 :  endwhile
 
 "  show result
-:  echom w:total_safe
+:  let @t = w:total_safe
+:  execute "normal ,lGo\<esc>\"tp,h"
 :endfunction
 
-:function IsReportSafe(num)
+:function IsReportSafe(num, ...)
 :  let l:last_level = 0
 :  let l:last_diff = 0
 :  let l:level = a:num
+:  let l:use_dampener = a:0 ? a:1 : 0
+:  let l:found_problem = 0
 
 :  while l:level != 0
 "    only need to compare if I have two adjacent levels
@@ -205,13 +246,58 @@ augroup END
 "      compare this level to the last
 :      let l:diff = l:level - l:last_level
 
-"      if the diff is 0 or too big, die
+"      if the diff is 0 or too big, we found a problem
 :      if l:diff == 0 || l:diff < -3 || l:diff > 3
+:        let l:found_problem = 1
+:      endif
+
+"      if the diff is a different direction than the last, we found a problem
+:      if l:last_diff * l:diff < 0
+:        let l:found_problem = 1
+:      endif
+
+"      if we found a problem, die if we already used the dampener
+:      if l:found_problem && l:use_dampener > 0
 :        return 0
 :      endif
 
-"      if the diff is a different direction than the last, die
-:      if l:last_diff * l:diff < 0
+"      if we found a problem, try using the dampener
+:      if l:found_problem
+:        let l:use_dampener = 1
+
+"        If we have a last diff, we have at least three numbers
+:        if l:last_diff != 0
+"          First try removing the 2nd previous level and recheck the whole report
+:          call TakeLineSnapshot()
+:          call DeletePrevPrevNumber()
+:          execute "normal! 0"
+:          let l:num = GetThisNumber()
+:          if IsReportSafe(l:num, l:use_dampener)
+:            return 1
+:          endif
+:        call RestoreLineSnapshot()
+:        endif
+
+"        Next try removing the previous level and recheck the whole report
+:        call TakeLineSnapshot()
+:        call DeletePrevNumber()
+:        execute "normal! 0"
+:        let l:num = GetThisNumber()
+:        if IsReportSafe(l:num, l:use_dampener)
+:          return 1
+:        endif
+:        call RestoreLineSnapshot()
+
+"        If that didn't work, undo then remove this level
+:        call TakeLineSnapshot()
+:        call DeleteThisNumber()
+:        execute "normal! 0"
+:        let l:num = GetThisNumber()
+:        if IsReportSafe(l:num, l:use_dampener)
+:          return 1
+:        endif
+
+"        We cannot dampen this problem, die
 :        return 0
 :      endif
 
