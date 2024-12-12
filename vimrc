@@ -201,20 +201,18 @@ augroup END
 :  execute "normal! dd"
 :endfunction
 
-:function HowManyReportsAreSafe(num_lines)
+:function HowManyReportsAreSafe()
 "  init totals
 :  let w:total_safe = 0
-:  let l:total_lines = 0
 
 "  try getting a number
 :  call PrepToReadLevels()
 :  let l:num = GetThisNumber()
 
 "  while we have a number at the start of a line, loop
-:  while l:num != 0 && l:total_lines < a:num_lines
+:  while l:num != 0
 "    see if our report line is Safe, pass in first num for efficiency
 :    let w:total_safe += IsReportSafe(l:num)
-:    let l:total_lines += 1
 :    call NextLine()
 :    call PrepToReadLevels()
 :    let l:num = GetThisNumber()
