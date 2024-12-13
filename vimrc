@@ -337,6 +337,114 @@ augroup END
 :endfunction
 " }}}
 
+" ==Day 4 {{{
+" Slicing lists is pretty excellent in vimscript, maybe better than python.
+" Hopefully I will try it soon.
+:function GetDayFourData()
+:  let w:xmasData = []
+
+"  put a blank line at the end of file to stop loop and grab first line
+:  execute "normal! Go\<esc>gg0y$"
+
+"  while the line is not empty, loop to save and get the next line
+:  while @" != ""
+:    call add(w:xmasData, @")
+:    execute "normal! j0y$"
+:  endwhile
+:endfunction
+
+:function SearchForXMASPartOne()
+:  let l:numXmas = 0
+
+:  let r = 0
+:  while r < len(w:xmasData)
+:    let c = 0
+:    while c < len(w:xmasData[r])
+:      if w:xmasData[r][c] == "X"
+"        check for nw search
+:        if r >= 3 && c >= 3
+:          let l:numXmas += w:xmasData[r-1][c-1] == "M" && w:xmasData[r-2][c-2] == "A" && w:xmasData[r-3][c-3] == "S"
+:        endif
+
+"        check for n search
+:        if r >= 3
+:          let l:numXmas += w:xmasData[r-1][c] == "M" && w:xmasData[r-2][c] == "A" && w:xmasData[r-3][c] == "S"
+:        endif
+
+"        check for ne search
+:        if r >= 3 && c < len(w:xmasData[r]) - 3
+:          let l:numXmas += w:xmasData[r-1][c+1] == "M" && w:xmasData[r-2][c+2] == "A" && w:xmasData[r-3][c+3] == "S"
+:        endif
+
+"        check for e search
+:        if c < len(w:xmasData[r]) - 3
+:          let l:numXmas += w:xmasData[r][c+1] == "M" && w:xmasData[r][c+2] == "A" && w:xmasData[r][c+3] == "S"
+:        endif
+
+"        check for se search
+:        if r < len(w:xmasData) - 3 && c < len(w:xmasData[r]) - 3
+:          let l:numXmas += w:xmasData[r+1][c+1] == "M" && w:xmasData[r+2][c+2] == "A" && w:xmasData[r+3][c+3] == "S"
+:        endif
+
+"        check for s search
+:        if r < len(w:xmasData) - 3
+:          let l:numXmas += w:xmasData[r+1][c] == "M" && w:xmasData[r+2][c] == "A" && w:xmasData[r+3][c] == "S"
+:        endif
+
+"        check for sw search
+:        if r < len(w:xmasData) - 3 && c >= 3
+:          let l:numXmas += w:xmasData[r+1][c-1] == "M" && w:xmasData[r+2][c-2] == "A" && w:xmasData[r+3][c-3] == "S"
+:        endif
+
+"        check for w search
+:        if c >= 3
+:          let l:numXmas += w:xmasData[r][c-1] == "M" && w:xmasData[r][c-2] == "A" && w:xmasData[r][c-3] == "S"
+:        endif
+:      endif
+:      let c += 1
+:    endwhile
+:    let r += 1
+:  endwhile
+
+"  put the result in a register
+:  let @r = l:numXmas
+:endfunction
+
+:function SearchForXMASPartTwo()
+:  let l:numXmas = 0
+
+"  Seems almost easier... We'll start to search for A
+"  We can skip the entire first row, first col, last row, and last col
+:  let r = 1
+:  while r < len(w:xmasData) - 1
+:    let c = 1
+:    while c < len(w:xmasData[r]) - 1
+"      Find A
+:      let l:isXmas = w:xmasData[r][c] == "A"
+
+"      Diagonal must be MAS or SAM
+:      if l:isXmas
+:        let l:isXmas = w:xmasData[r-1][c-1] == "M" && w:xmasData[r+1][c+1] == "S"
+:        let l:isXmas = l:isXmas || (w:xmasData[r-1][c-1] == "S" && w:xmasData[r+1][c+1] == "M")
+:      endif
+
+"      Either sides or top and bottom must be equal
+:      if l:isXmas
+:        let l:isXmas = w:xmasData[r-1][c-1] == w:xmasData[r-1][c+1] && w:xmasData[r+1][c-1] == w:xmasData[r+1][c+1]
+:        let l:isXmas = l:isXmas || (w:xmasData[r-1][c-1] == w:xmasData[r+1][c-1] && w:xmasData[r-1][c+1] == w:xmasData[r+1][c+1])
+:      endif
+
+:      let l:numXmas += l:isXmas
+:      let c += 1
+:    endwhile
+:    let r += 1
+:  endwhile
+
+"  put the result in a register
+:  let @r = l:numXmas
+:endfunction
+" }}}
+
 " }}}
 
 
