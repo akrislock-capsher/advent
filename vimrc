@@ -309,6 +309,34 @@ augroup END
 
 " }}}
 
+" ==Day 3 {{{
+" Ummm... I might be able to do this one with some pretty easy macros
+" Part 1 regex and macros:
+"  Finder Regex = /mul([0-9]\+,[0-9]\+)\<cr>
+"  Recursive Macro built in pieces
+"  @z = f(l"adt,l"bdt)
+"  @y = ,lyypf=i+\<esc>f0x"apA * "bpk0
+"  @x = ,hn
+"  @m = @z@y@x@m
+" Part 2 adjustment, just nuke everything between don't() and do()
+"  Finder for do(n't) functions = /don\?'\?t\?()
+"  Recursive Macro to add newlines
+"  @w = s\<cr>D\<esc>n@w
+" Be a bit careful to make sure every line but the first starts with Do
+"  Finder for Don't functions = /Don't()
+"  Recursive Macro to delete those lines
+"  @v = s\<cr>D\<esc>n@w
+" Then we can just use the Part 1 method again
+
+:function SumMultiply()
+"  After using the macros to copy data over, this will just calc it
+"  Final value will be in register t
+:  let l:total = 0
+"... Lines populated by those macros
+:  let @t = l:total
+:endfunction
+" }}}
+
 " }}}
 
 
