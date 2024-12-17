@@ -448,29 +448,44 @@ augroup END
 " ==Day 5 {{{
 " I get to use a pretty vimmy solution for the first part of this day
 " Macros:
-"   "find rule" @p = /[0-9]\+|[0-9]\+
-"   "invert rule" @i = b"ydt|l"xd$
-"   "delete inverted rule matches" 
-"     @d = :%s/[0-9,]*\<c-r>x,[0-9,]*\<c-r>y[0-9,]*
-"   "recursive macro" @r = @p@i@d@r
-" EDIT: Turns out this sucks. Most rules are obeyed, which
-"       halts the recursive macro when it does not find a match.
-"       ... aaand I don't even get the right answer
+"   "find rule" @p = gg/[0-9]\+|[0-9]\+\<cr>y$
+"   "invert rule" @i = "ydt|l"xd$
+
+:function CleanOutBadPrints()
+"  Call the macros in a loop to clean out violating lines
+:  let @" = ""
+:  execute "normal @p"
+:  while stridx(@", "|") > -1
+:    execute "normal @i"
+
+"    Do the find and delete functionally instead of macros
+:    let l:pattern = @x . ",.*" . @y
+:    let l:found = search(l:pattern)
+:    while l:found
+:      execute "normal dd"
+:      let l:found = search(l:pattern)
+:    endwhile
+
+"    Move to next rule, sanity check that it's a rule
+:    let @" = ""
+:    execute "normal @p"
+:  endwhile
+:endfunction
 
 :function SumMidNumbers()
-"  Hopefully after hurting my wrist, the remaining are correct
+"  Hopefully the remaining are correct
 :  let l:total = 0
 
 "  delete the first line, then loop as long as delete register is not empty
-:  execute "normal! y$"
-:  while @" != ""
+:  execute "normal! \"ddd"
+:  while 0 + @d
 "    find mid number of pages to sum
-:    let l:pages = split(@", ",")
-:    let l:index = len(pages) / 2 + 1
+:    let l:pages = split(@d, ",")
+:    let l:index = len(pages) / 2
 :    let l:total += 0 + l:pages[l:index]
 
-"    move down
-:    execute "normal! j0y$"
+"    next line
+:    execute "normal! \"ddd"
 :  endwhile
 :  let @a = l:total
 :endfunction
