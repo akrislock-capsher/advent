@@ -450,6 +450,7 @@ augroup END
 " Macros:
 "   "find rule" @p = gg/[0-9]\+|[0-9]\+\<cr>y$
 "   "invert rule" @i = "ydt|l"xd$
+"   "get rule" @g = "xyt|f|l"yy$
 
 :function CleanOutBadPrints()
 "  Call the macros in a loop to clean out violating lines
@@ -462,7 +463,8 @@ augroup END
 :    let l:pattern = @x . ",.*" . @y
 :    let l:found = search(l:pattern)
 :    while l:found
-:      execute "normal dd"
+"      Move the violations over into another file for part 2
+:      execute "normal dd,lP,h"
 :      let l:found = search(l:pattern)
 :    endwhile
 
@@ -470,6 +472,51 @@ augroup END
 :    let @" = ""
 :    execute "normal @p"
 :  endwhile
+:endfunction
+
+" WAIT: I can be more clever! The middle number will always have 
+" ..... equal number of "left" and "right" rules.
+" ... On second thought, this is an assumption... Try it anyways.
+:function SumMidNumbersForBadPrints()
+:  let l:total = 0
+
+"  delete the first line, then loop as long as delete register is not empty
+:  execute "normal! \"ddd"
+:  while 0 + @d
+"    analyze these pages over in the rule file
+:    let l:pages = split(@d, ",")
+:    execute "normal ,h"
+
+"    double loop over those
+:    for l:p1 in l:pages
+:      let l:left = 0
+:      let l:right = 0
+:      for l:p2 in l:pages
+:        if l:p1 != l:p2
+
+"          search for rules with p1 and p2 in them
+:          let l:pattern = l:p1 . "|" . l:p2
+:          let l:found_rule = search(l:pattern)
+:          if l:found_rule
+:            let l:left += 1
+:          else
+:            let l:right += 1
+:          endif
+:        endif
+:      endfor
+:
+"      if this number has equal # of left and right rules, it is the middle
+:      if l:left == l:right
+:        let l:total += 0 + l:p1
+:        break
+:      endif
+:    endfor
+
+"    next line
+:    execute "normal ,l"
+:    execute "normal! \"ddd"
+:  endwhile
+:  let @a = l:total
 :endfunction
 
 :function SumMidNumbers()
