@@ -557,6 +557,125 @@ augroup END
 :endfunction
 " }}}
 
+" ==Day 6 {{{
+" I get to use a pretty vimmy solution for the first part of this day
+" For Part two, I need to track the blocks to see which direction they're hit
+:function WalkGuard()
+"  This will be fun with vim
+"  First find map extrema
+:  execute "normal! G$"
+:  let [junk, maxx, maxy, junk2] = getpos(".")
+
+"  Tracking when blocks are hit by the guard from different sides
+:  let l:n_bump = 1
+:  let l:w_bump = 2
+:  let l:s_bump = 4
+:  let l:e_bump = 8
+
+"  Finding the guard
+:  let l:guard_pattern = "[v<>^]"
+:  let l:guard_found = search(l:guard_pattern)
+
+"  Loop while guard is on screen
+:  while l:guard_found
+:    let [junk, x, y, junk2] = getpos(".")
+:    execute "normal! yl"
+:    let dir = @"
+
+"    Simulation time
+"
+"    North
+:    if dir == "^"
+:      if y > 1
+"        Not at the top, move up
+:        execute "normal! kyl"
+
+"        See what is there to step or turn
+:        let step = @"
+:        if step == "#"
+"          If it is a block, turn
+:          execute "normal! jr>"
+:        else
+"          Not a block, step
+:          execute "normal! r^jrX"
+:        endif
+:      else
+"        Step off the map
+:        execute "normal! rX"
+:      endif
+:    endif
+
+"    West
+:    if dir == "<"
+:      if x > 1
+"        Not at the left, move left
+:        execute "normal! hyl"
+
+"        See what is there to step or turn
+:        let step = @"
+:        if step == "#"
+"          If it is a block, turn
+:          execute "normal! lr^"
+:        else
+"          Not a block, step
+:          execute "normal! r<lrX"
+:        endif
+:      else
+"        Step off the map
+:        execute "normal! rX"
+:      endif
+:    endif
+
+"    South
+:    if dir == "v"
+:      if y < maxy
+"        Not at the bottom, move down
+:        execute "normal! jyl"
+
+"        See what is there to step or turn
+:        let step = @"
+:        if step == "#"
+"          If it is a block, turn
+:          execute "normal! kr<"
+:        else
+"          Not a block, step
+:          execute "normal! rvkrX"
+:        endif
+:      else
+"        Step off the map
+:        execute "normal! rX"
+:      endif
+:    endif
+
+"    East
+:    if dir == ">"
+:      if x < maxx
+"        Not at the right, move right
+:        execute "normal! lyl"
+
+"        See what is there to step or turn
+:        let step = @"
+:        if step == "#"
+"          If it is a block, turn
+:          execute "normal! hrv"
+:        else
+"          Not a block, step
+:          execute "normal! r>hrX"
+:        endif
+:      else
+"        Step off the map
+:        execute "normal! rX"
+:      endif
+:    endif
+
+"    Find the guard again
+:    redraw   " << Gamechanger!! :D
+:    let l:guard_found = search(l:guard_pattern)
+:  endwhile
+:endfunction
+
+" }}}
+
 " }}}
 
 
