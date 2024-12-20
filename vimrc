@@ -474,47 +474,66 @@ augroup END
 :  endwhile
 :endfunction
 
-" WAIT: I can be more clever! The middle number will always have 
-" ..... equal number of "left" and "right" rules.
-" ... On second thought, this is an assumption... Try it anyways.
-:function SumMidNumbersForBadPrints()
+:function CollectRulesAndFixBadPrints()
 :  let l:total = 0
 
-"  delete the first line, then loop as long as delete register is not empty
-:  execute "normal! \"ddd"
+"  yank the first line, then loop as long as delete register is not empty
+:  execute "normal! \"dyy"
 :  while 0 + @d
 "    analyze these pages over in the rule file
 :    let l:pages = split(@d, ",")
+:    let l:midindex = len(l:pages) / 2
+:    let l:rules = []
 :    execute "normal ,h"
 
-"    double loop over those
+"    double loop over pages to find applicable rules
 :    for l:p1 in l:pages
-:      let l:left = 0
-:      let l:right = 0
 :      for l:p2 in l:pages
-:        if l:p1 != l:p2
+"        only loop over each pair once
+:        if l:p1 == l:p2
+:          break
+:        endif
 
-"          search for rules with p1 and p2 in them
-:          let l:pattern = l:p1 . "|" . l:p2
-:          let l:found_rule = search(l:pattern)
-:          if l:found_rule
-:            let l:left += 1
-:          else
-:            let l:right += 1
-:          endif
+"        search for rules with p1 and p2 in them
+:        let l:pattern = l:p1 . "|" . l:p2
+:        let l:found_rule = search(l:pattern)
+:        if l:found_rule
+:          execute "normal! y$"
+:          call add(l:rules, @")
+:        endif
+"        don't forget the reverse rule
+:        let l:pattern = l:p2 . "|" . l:p1
+:        let l:found_rule = search(l:pattern)
+:        if l:found_rule
+:          execute "normal! y$"
+:          call add(l:rules, @")
 :        endif
 :      endfor
-:
-"      if this number has equal # of left and right rules, it is the middle
-:      if l:left == l:right
-:        let l:total += 0 + l:p1
-:        break
-:      endif
 :    endfor
 
+"    TODO: Yeargh, something about my algorithm is wrong
+"    loop over rules, find pages which are only on the left
+"    we only need to do this until we get to the mid index, then we win
+:    let l:index = 0
+:    let l:left_page = ""
+:    while l:index < l:midindex - 1
+"      for any rule, remove pages on the right
+:      for l:rule in l:rules
+:        call filter(l:pages, {idx, val -> 0 + val != 0 + l:rule[3:]})
+:      endfor
+
+"      take one of the surviving left-only pages, and remove any rule with it
+:      call filter(l:rules, {idx, val -> val !~ l:pages[0]})
+:      if len(l:pages) > 0
+:        let l:left_page = remove(l:pages, 0)
+:      let l:index += 1
+:    endwhile
+
+"    should have one surviving left-only page
+:    let l:total += l:left_page
+
 "    next line
-:    execute "normal ,l"
-:    execute "normal! \"ddd"
+:    execute "normal ,lj\"dyy"
 :  endwhile
 :  let @a = l:total
 :endfunction
