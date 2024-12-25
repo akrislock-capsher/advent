@@ -560,11 +560,86 @@ augroup END
 " ==Day 6 {{{
 " I get to use a pretty vimmy solution for the first part of this day
 " For Part two, I need to track the blocks to see which direction they're hit
+:function StrToHexnum(char)
+:  let l:hexstr = "0x" . a:char
+:  return 0 + l:hexstr
+:endfunction
+
+:function NumToHexstr(num)
+:  if a:num < 10
+:    return "" . a:num
+:  endif
+"  65 is A
+:  return nr2char(65 + a:num - 10)
+:endfunction
+
+:function SetBlocker()
+"  Search for any step along the guard's original path
+:  let w:step_found = search("X")
+
+"  Save the position
+:  if w:step_found
+:    let [junk, w:block_y, w:block_x, junk] = getpos(".")
+:  else
+:    let w:block_x = 0
+:    let w:block_y = 0
+:  endif
+
+"  Put a block in
+:  execute "normal! r#"
+:  return w:step_found
+:endfunction
+
+:function RemoveBlocker(loop)
+"  Go back to the blocker position, and replace with Y for a loop block or N
+:  call setpos(".", [0, w:block_y, w:block_x, 0])
+:  if a:loop
+:    execute "normal! rY"
+:  else
+:    execute "normal! rN"
+:  endif
+:endfunction
+
+:function DetectBlockBump(direction, step)
+"  Detect bumping this block
+:  let l:block_label = NumToHexstr(or(StrToHexnum(a:step), a:direction))
+"  If we bumped it from this dir before, it's a loop!
+:  if a:step == l:block_label
+:    let l:looping = 1
+:  else
+:    let l:looping = 0
+:  endif
+:  execute "normal! r" . l:block_label
+:  return l:looping
+:endfunction
+
+:function FindGuard()
+"  Find the original guard position
+:  let l:guard_pattern = "[v<>^]"
+:  let l:guard_found = search(l:guard_pattern)
+:  let [junk, w:guard_y, w:guard_x, junk] = getpos(".")
+:endfunction
+
+:function ReplaceGuard()
+"  Go back to the original guard position, and put him back
+:  call setpos(".", [0, w:guard_y, w:guard_x, 0])
+:  execute "normal! r^"
+:endfunction
+
+:function ResetBlocks()
+"  After we test for looping, reset all the blocks back to no bumps
+:  let l:mark_found = search("[0-9A-F]")
+:  while l:mark_found
+:    execute "normal r#"
+:    let l:mark_found = search("[0-9A-F]")
+:  endwhile
+:endfunction
+
 :function WalkGuard()
 "  This will be fun with vim
 "  First find map extrema
 :  execute "normal! G$"
-:  let [junk, maxx, maxy, junk2] = getpos(".")
+:  let [junk, maxy, maxx, junk2] = getpos(".")
 
 "  Tracking when blocks are hit by the guard from different sides
 :  let l:n_bump = 1
@@ -572,13 +647,15 @@ augroup END
 :  let l:s_bump = 4
 :  let l:e_bump = 8
 
-"  Finding the guard
+"  Find the guard store the original position of the guard
 :  let l:guard_pattern = "[v<>^]"
 :  let l:guard_found = search(l:guard_pattern)
+:  let l:last_step = "."  "very first step can be dot, can't put a block there
 
-"  Loop while guard is on screen
-:  while l:guard_found
-:    let [junk, x, y, junk2] = getpos(".")
+"  Loop while guard is on screen or not stuck in a loop
+:  let l:looping = 0
+:  while l:guard_found && !l:looping
+:    let [junk, y, x, junk2] = getpos(".")
 :    execute "normal! yl"
 :    let dir = @"
 
@@ -592,16 +669,24 @@ augroup END
 
 "        See what is there to step or turn
 :        let step = @"
-:        if step == "#"
-"          If it is a block, turn
+:        if step =~ "[0-9A-F#]"
+"          Detect bumping this block
+:          let l:looping = DetectBlockBump(l:n_bump, step)
+:          if l:looping
+"            Stop stepping
+:            execute "normal! jr" . l:last_step
+:            break
+:          endif
+"          Also, still turn
 :          execute "normal! jr>"
 :        else
 "          Not a block, step
-:          execute "normal! r^jrX"
+:          execute "normal! r^jr" . l:last_step
+:          let l:last_step = step
 :        endif
 :      else
 "        Step off the map
-:        execute "normal! rX"
+:        execute "normal! r" . l:last_step
 :      endif
 :    endif
 
@@ -613,16 +698,24 @@ augroup END
 
 "        See what is there to step or turn
 :        let step = @"
-:        if step == "#"
-"          If it is a block, turn
+:        if step =~ "[0-9A-F#]"
+"          Detect bumping this block
+:          let l:looping = DetectBlockBump(l:w_bump, step)
+:          if l:looping
+"            Stop stepping
+:            execute "normal! lr" . l:last_step
+:            break
+:          endif
+"          Also, still turn
 :          execute "normal! lr^"
 :        else
 "          Not a block, step
-:          execute "normal! r<lrX"
+:          execute "normal! r<lr" . l:last_step
+:          let l:last_step = step
 :        endif
 :      else
 "        Step off the map
-:        execute "normal! rX"
+:        execute "normal! r" . l:last_step
 :      endif
 :    endif
 
@@ -634,16 +727,24 @@ augroup END
 
 "        See what is there to step or turn
 :        let step = @"
-:        if step == "#"
-"          If it is a block, turn
+:        if step =~ "[0-9A-F#]"
+"          Detect bumping this block
+:          let l:looping = DetectBlockBump(l:s_bump, step)
+:          if l:looping
+"            Stop stepping
+:            execute "normal! kr" . l:last_step
+:            break
+:          endif
+"          Also, still turn
 :          execute "normal! kr<"
 :        else
 "          Not a block, step
-:          execute "normal! rvkrX"
+:          execute "normal! rvkr" . l:last_step
+:          let l:last_step = step
 :        endif
 :      else
 "        Step off the map
-:        execute "normal! rX"
+:        execute "normal! r" . l:last_step
 :      endif
 :    endif
 
@@ -655,16 +756,24 @@ augroup END
 
 "        See what is there to step or turn
 :        let step = @"
-:        if step == "#"
-"          If it is a block, turn
+:        if step =~ "[0-9A-F#]"
+"          Detect bumping this block
+:          let l:looping = DetectBlockBump(l:n_bump, step)
+:          if l:looping
+"            Stop stepping
+:            execute "normal! hr" . l:last_step
+:            break
+:          endif
+"          Also, still turn
 :          execute "normal! hrv"
 :        else
 "          Not a block, step
-:          execute "normal! r>hrX"
+:          execute "normal! r>hr" . l:last_step
+:          let l:last_step = step
 :        endif
 :      else
 "        Step off the map
-:        execute "normal! rX"
+:        execute "normal! r" . l:last_step
 :      endif
 :    endif
 
@@ -672,8 +781,24 @@ augroup END
 :    redraw   " << Gamechanger!! :D
 :    let l:guard_found = search(l:guard_pattern)
 :  endwhile
+
+"  At the end, report if the guard was looping
+:  return l:looping
 :endfunction
 
+:function FindAllGuardLoops()
+"  Let's tie these all together, start with part 1 solution with guard in place
+"  Find each step the guard made before, try putting a new block there
+:  while SetBlocker()
+"    Walk the guard, see if he gets caught in a loop
+:    let l:loop = WalkGuard()
+"    Remove that blocker, but label it Y or N depending on loop
+:    call RemoveBlocker(l:loop)
+"    Reset everything for the next trial block
+:    call ResetBlocks()
+:    call ReplaceGuard()
+:  endwhile
+:endfunction
 " }}}
 
 " }}}
