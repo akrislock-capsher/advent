@@ -801,6 +801,70 @@ augroup END
 :endfunction
 " }}}
 
+" ==Day 7 {{{
+:function PrepOperators(n)
+"  For n = 1 just make a list of lists of each operator
+:  if a:n == 1
+:    return [["+"], ["*"]]
+:  endif
+
+"  Otherwise, duplicate each list and add each operator
+:  let l:result = []
+:  for l:op_list in PrepOperators(a:n - 1)
+:    let l:result = add(l:result, l:op_list + ["+"])
+:    let l:result = add(l:result, l:op_list + ["*"])
+:  endfor
+:  return l:result
+:endfunction
+
+:function TestOperatorLine()
+"  Get the line, split into parts
+:  let l:line = split(getline("."))
+:  if !len(l:line)
+:    return 0
+:  endif
+
+"  Very first number is the answer, slice off the :
+:  let l:answer = 0 + remove(l:line, 0)[:-2]  " -2 that's a bit different than python...
+
+"  Make another list of operators
+:  let l:ops_list = PrepOperators(len(l:line) - 1)
+
+"  Try each list of operators, compare them to the answer
+:  for l:ops in l:ops_list
+:    let l:trial = 0 + l:line[0]
+:    let l:index = 1
+:    for l:op in l:ops
+:      if l:op == "*"
+:        let l:trial = l:trial * l:line[l:index]
+:      elseif l:op == "+"
+:        let l:trial = l:trial + l:line[l:index]
+:      endif
+:      let l:index += 1
+:    endfor
+
+"    See if we got the answer
+:    if l:trial == l:answer
+:      let w:day_seven += l:answer
+:      break
+:    endif
+:  endfor
+
+"  Return true to say we got a line of data
+:  return 1
+:endfunction
+
+:function TestOperatorLines()
+:  let w:day_seven = 0
+:  while TestOperatorLine()
+"    Just move down, the other function does all the work
+:    execute "normal! j"
+:    redraw
+:  endwhile
+:  echom w:day_seven
+:endfunction
+" }}}
+
 " }}}
 
 
