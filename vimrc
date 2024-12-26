@@ -805,7 +805,7 @@ augroup END
 :function PrepOperators(n)
 "  For n = 1 just make a list of lists of each operator
 :  if a:n == 1
-:    return [["+"], ["*"]]
+:    return [["+"], ["*"], ["|"]]
 :  endif
 
 "  Otherwise, duplicate each list and add each operator
@@ -813,6 +813,7 @@ augroup END
 :  for l:op_list in PrepOperators(a:n - 1)
 :    let l:result = add(l:result, l:op_list + ["+"])
 :    let l:result = add(l:result, l:op_list + ["*"])
+:    let l:result = add(l:result, l:op_list + ["|"])
 :  endfor
 :  return l:result
 :endfunction
@@ -839,6 +840,9 @@ augroup END
 :        let l:trial = l:trial * l:line[l:index]
 :      elseif l:op == "+"
 :        let l:trial = l:trial + l:line[l:index]
+:      elseif l:op == "|"
+"        In vimscript, we get part two of day seven nearly for free with .
+:        let l:trial = 0 + (l:trial . l:line[l:index])
 :      endif
 :      let l:index += 1
 :    endfor
